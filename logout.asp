@@ -12,7 +12,7 @@
 <% Response.Expires = -1 %>
 <%
 session.abandon
-response.redirect "index.asp"
+response.redirect "../index.asp"
 %> 
 
 </body>

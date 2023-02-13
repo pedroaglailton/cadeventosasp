@@ -1,0 +1,783 @@
+<%@LANGUAGE="VBSCRIPT" CODEPAGE="1252"%>
+<%Response.Buffer = True%>
+<!--#INCLUDE FILE="config.inc"-->
+<!--#INCLUDE FILE="level1.inc"-->
+<%
+If session("allow") = False Then Response.Redirect "../index.asp"
+If session("clearance") < 1 Then Response.Redirect "utility.asp?method=unauthorized"
+
+'strCon = "DBQ=C:\wamp\www\CNPJ\Cadastro_Escolas\DB\colegial.mdb;Driver={Microsoft Access Driver (*.mdb)};"
+pagina_consulta = "df_consulta.asp"
+pagina_alteracao = "df_alteracao.asp"
+pagina_inclusao = "df_inclusao.asp"
+pagina_login = "df_login.asp"
+'If Session("admin") <> "" And Session("ip_admin") = Request.ServerVariables("REMOTE_ADDR") Then
+%>
+<!DOCTYPE html>
+<!--<![endif]-->
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<title>Sistema de Incrição  - Eventos</title>
+	<meta name="description" content="">
+	<meta name="author" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" type='text/css' media='all' href="static/css/base.css">
+    <link rel="stylesheet" type='text/css' media='all' href="static/css/colors.css">
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js" type="text/javascript"></script>
+<script src="maskedinput.js" type="text/javascript"></script>
+<script type="text/javascript"> 
+jQuery.noConflict();
+jQuery(function($){   //$("#data").mask("99/99/9999");   $("#data").mask("*9/99/9999",{completed:function(){alert("You typed the following: "+this.val());}});
+ $("#data_nascimento").mask("99/99/9999",{placeholder:" "});   $("#telefone").mask("(099) 99999-9999");   $("#cpf").mask("999.999.999-99");   $("#cep1").mask("99999 - 999");    $("#cnpj").mask("99.999.999/9999-99");   $("#placa").mask("aaa - 9999"); });</script>
+ 
+<script type="text/javascript">
+src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"
+function getEndereco() {
+	// Se o campo CEP não estiver vazio
+	if($.trim($("#cep").val()) != ""){
+	$.getScript("http://cep.republicavirtual.com.br/web_cep.php?formato=javascript&cep="+$("#cep").val(), function(){
+	if (resultadoCEP["tipo_logradouro"] != '') {
+		if (resultadoCEP["resultado"]) {
+		// troca o valor dos elementos
+			$("#endereco").val(unescape(resultadoCEP["tipo_logradouro"]) + " " + unescape(resultadoCEP["logradouro"]));
+			$("#bairro").val(unescape(resultadoCEP["bairro"]));
+			$("#cidade").val(unescape(resultadoCEP["cidade"]));
+			$("#estado").val(unescape(resultadoCEP["uf"]));
+			//$("#numero").focus();
+			}
+		}		
+	});
+	}
+}
+</script>
+<script language="JavaScript" type="text/javascript">
+    function maiuscula(id) {
+                //palavras para ser ignoradas
+                var wordsToIgnore = ["DOS", "DAS", "de", "do", "Dos", "Das"],
+                minLength = 3;
+                var str = $(id).val(); 
+                var getWords = function(str) {
+                    return str.match(/\S+\s*/g);
+                }
+                $(id).each(function () {
+                    var words = getWords(this.value);
+                    $.each(words, function (i, word) {
+                        // somente continua se a palavra nao estiver na lista de ignorados
+                        if (wordsToIgnore.indexOf($.trim(word)) == -1 && $.trim(word).length > minLength) {
+                            words[i] = words[i].charAt(0).toUpperCase() + words[i].slice(1).toLowerCase();
+                        } else{
+                        words[i] = words[i].toLowerCase();}
+                    });
+                    this.value = words.join("");
+                });
+            };
+	</script>
+<script language="JavaScript" type="text/javascript">
+<!--
+function abre_janela(width, height, nome) {
+var top; var left;
+top = ( (screen.height/2) - (height/2) )
+left = ( (screen.width/2) - (width/2) )
+window.open('',nome,'width='+width+',height='+height+',scrollbars=no,toolbar=no,location=no,status=no,menubar=no,resizable=no,left='+left+',top='+top);
+}
+function recebe_imagem(campo, imagem){
+var foto = 'img_' + campo
+document.form_incluir[campo].value = imagem;
+document.form_incluir[foto].src = imagem;
+}
+function verifica_(form_incluir) {
+var passed = false;
+var ok = false
+var campo
+for (i = 0; i < form.length; i++) {
+  campo = form[i].name;
+  if (form[i].df_verificar == "sim") {
+    if (form[i].type == "text"  | form[i].type == "textarea" | form[i].type == "select-one") {
+      if (form[i].value == "" | form[i].value == "http://") {
+		form[campo].className='campo_alerta'
+        form[campo].focus();
+        alert("Preencha corretamente o campo");
+        return passed;
+        stop;
+      }
+    }
+    else if (form[i].type == "radio") {
+      for (x = 0; x < form[campo].length; x++) {
+        ok = false;
+        if (form[campo][x].checked) {
+          ok = true;
+          break;
+        }
+      }
+      if (ok == false) {
+        form[campo][0].focus();
+		form[campo][0].select();
+        alert("Informe uma das opc�es");
+        return passed;
+        stop;
+      }
+    }
+    var msg = ""
+    if (form[campo].df_validar == "cpf") msg = checa_cpf(form[campo].value);
+    if (form[campo].df_validar == "cnpj") msg = checa_cnpj(form[campo].value);
+    if (form[campo].df_validar == "cpf_cnpj") {
+	  msg = checa_cpf(form[campo].value);
+	  if (msg != "") msg = checa_cnpj(form[campo].value);
+	}
+    if (form[campo].df_validar == "email") msg = checa_email(form[campo].value);
+    if (form[campo].df_validar == "numerico") msg = checa_numerico(form[campo].value);
+    if (msg != "") {
+	  if (form[campo].df_validar == "cpf_cnpj") msg = "informe corretamente o n�mero do CPF ou CNPJ";
+	  form[campo].className='campo_alerta'
+      form[campo].focus();
+      form[campo].select();
+      alert(msg);
+      return passed;
+      stop;
+    }
+  }
+}
+passed = true;
+return passed;
+}
+</script>
+
+<style type="text/css">
+<!--
+.Estilo2 {
+	font-size: 18px;
+	font-family: Arial, Helvetica, sans-serif;
+}
+.Estilo3 {font-family: Arial, Helvetica, sans-serif}
+-->
+</style>
+</HEAD>
+<body>
+	<section class="bg-primary">
+          <span class="background dark" style="background-image:url('https://source.unsplash.com/RkBTPqPEGDo/')"></span> 	      
+          <div class="wrap">
+           <fieldset>
+         
+<%
+If Not IsEmpty(Request.Form) Then
+  Set objCon = Server.CreateObject("ADODB.Connection")
+  objCon.Open strCon
+
+  campo_duplicado = false
+  campo_msg = ""
+  Set objRS_duplic = Server.CreateObject("ADODB.Recordset")
+  objRS_duplic.CursorLocation = 3
+  objRS_duplic.CursorType = 0
+  objRS_duplic.LockType = 3
+  strQ_duplic = "SELECT cpf FROM inc_alunos Where cpf Like '" & Trim(Request.Form("cpf")) & "'"
+  objRS_duplic.Open strQ_duplic, objCon, , , &H0001
+  If Not objRS_duplic.EOF Then
+    If Trim(campo_msg) = "" Then
+      campo_msg = "cpf"
+      valor_msg = Trim(Request.Form("cpf"))
+    End If
+    campo_duplicado = true
+  End If
+  objRS_duplic.Close
+  Set objRS_duplic = Nothing
+  Set strQ_duplic = Nothing
+  Set objRS_duplic = Server.CreateObject("ADODB.Recordset")
+  objRS_duplic.CursorLocation = 3
+  objRS_duplic.CursorType = 0
+  objRS_duplic.LockType = 3
+  strQ_duplic = "SELECT nome FROM inc_alunos Where nome Like '" & Trim(Request.Form("nome")) & "'"
+  objRS_duplic.Open strQ_duplic, objCon, , , &H0001
+  If Not objRS_duplic.EOF Then
+    If Trim(campo_msg) = "" Then
+      campo_msg = "nome"
+      valor_msg = Trim(Request.Form("nome"))
+    End If
+    campo_duplicado = true
+  End If
+  objRS_duplic.Close
+  Set objRS_duplic = Nothing
+  Set strQ_duplic = Nothing
+
+  If campo_duplicado = false Then
+    Set objRS= Server.CreateObject("ADODB.Recordset")
+    objRS.CursorLocation = 3
+    objRS.CursorType = 0
+    objRS.LockType = 3
+    strQ = "SELECT * FROM inc_alunos Where 1 <> 1"
+    objRS.Open strQ, objCon, , , &H0001
+    objRS.Addnew()
+    If objRS.Fields("bairro").properties("IsAutoIncrement") = False Then
+      objRS("bairro") = Trim(Request.Form("bairro"))
+    End If
+    If objRS.Fields("cep").properties("IsAutoIncrement") = False Then
+      objRS("cep") = Trim(Request.Form("cep"))
+    End If
+    If objRS.Fields("cidade").properties("IsAutoIncrement") = False Then
+      objRS("cidade") = Trim(Request.Form("cidade"))
+    End If
+    If objRS.Fields("cpf").properties("IsAutoIncrement") = False Then
+      objRS("cpf") = Trim(Request.Form("cpf"))
+    End If
+    If objRS.Fields("data_nascimento").properties("IsAutoIncrement") = False Then
+      objRS("data_nascimento") = Trim(Request.Form("data_nascimento"))
+    End If
+    If objRS.Fields("endereco").properties("IsAutoIncrement") = False Then
+      objRS("endereco") = Trim(Request.Form("endereco"))
+    End If
+    If objRS.Fields("escola").properties("IsAutoIncrement") = False Then
+      objRS("escola") = Trim(Request.Form("escola"))
+    End If
+    If objRS.Fields("foto").properties("IsAutoIncrement") = False Then
+      objRS("foto") = Trim(Request.Form("foto"))
+    End If
+    If objRS.Fields("id_escola").properties("IsAutoIncrement") = False Then
+      objRS("id_escola") = Trim(Request.Form("id_escola"))
+    End If
+    If objRS.Fields("nome").properties("IsAutoIncrement") = False Then
+      objRS("nome") = Trim(Request.Form("nome"))
+    End If
+    If objRS.Fields("responsavel").properties("IsAutoIncrement") = False Then
+      objRS("responsavel") = Trim(Request.Form("responsavel"))
+    End If
+    
+    If objRS.Fields("numero").properties("IsAutoIncrement") = False Then
+      objRS("numero") = Trim(Request.Form("numero"))
+    End If
+    If objRS.Fields("passaport").properties("IsAutoIncrement") = False Then
+      objRS("passaport") = Trim(Request.Form("passaport"))
+    End If
+    If objRS.Fields("rg").properties("IsAutoIncrement") = False Then
+      objRS("rg") = Trim(Request.Form("rg"))
+    End If
+	If objRS.Fields("cnpj_escola").properties("IsAutoIncrement") = False Then
+      objRS("cnpj_escola") = Trim(Request.Form("cnpj_escola"))
+    End If
+	If objRS.Fields("telefone").properties("IsAutoIncrement") = False Then
+      objRS("telefone") = Trim(Request.Form("telefone"))
+    End If
+	If objRS.Fields("modalidade1").properties("IsAutoIncrement") = False Then
+      objRS("modalidade1") = Trim(Request.Form("modalidade1"))
+    End If
+	If objRS.Fields("modalidade2").properties("IsAutoIncrement") = False Then
+      objRS("modalidade2") = Trim(Request.Form("modalidade2"))
+    End If
+	If objRS.Fields("modalidade3").properties("IsAutoIncrement") = False Then
+      objRS("modalidade3") = Trim(Request.Form("modalidade3"))
+    End If
+	If objRS.Fields("modalidade4").properties("IsAutoIncrement") = False Then
+      objRS("modalidade4") = Trim(Request.Form("modalidade4"))
+    End If
+	If objRS.Fields("modalidade5").properties("IsAutoIncrement") = False Then
+      objRS("modalidade5") = Trim(Request.Form("modalidade5"))
+    End If
+	
+	If objRS.Fields("matricula_escola").properties("IsAutoIncrement") = False Then
+      objRS("matricula_escola") = Trim(Request.Form("matricula_escola"))
+    End If
+	If objRS.Fields("sexo").properties("IsAutoIncrement") = False Then
+      objRS("sexo") = Trim(Request.Form("sexo"))
+    End If
+	If objRS.Fields("natural").properties("IsAutoIncrement") = False Then
+      objRS("natural") = Trim(Request.Form("natural"))
+    End If
+	If objRS.Fields("parentesco").properties("IsAutoIncrement") = False Then
+      objRS("parentesco") = Trim(Request.Form("parentesco"))
+    End If
+	If objRS.Fields("categoria1").properties("IsAutoIncrement") = False Then
+      objRS("categoria1") = Trim(Request.Form("categoria1"))
+    End If
+	If objRS.Fields("categoria2").properties("IsAutoIncrement") = False Then
+      objRS("categoria2") = Trim(Request.Form("categoria2"))
+    End If
+	If objRS.Fields("categoria3").properties("IsAutoIncrement") = False Then
+      objRS("categoria3") = Trim(Request.Form("categoria3"))
+    End If
+    objRS.Update
+    objRS.Close
+    Set objRS = Nothing
+%>
+
+<h1 align="center"><img src="imagens/logo1.png" width="122" height="149"><br>
+<h2 align="center" class="Estilo3"><strong>Ceará Colegial informa</strong> </h2>
+    <span class="Estilo3">   Aluno foi cadastrado com sucesso.<br>
+    <a href="http://www.sistemainc.com.br/cearacolegial/sistema/welcome.asp">Voltar</a><BR>
+</span><span class="Estilo2"><A href="df_inclusao.asp">Clique aqui</a> para voltar ao cadastro</span><span class="Estilo3"></A></span><BR>
+    <span style="text-align: center"></span><BR>
+</span></h1>
+
+<span style="text-align: center"><%
+  Else
+%>
+
+    <img src="imagens/129.png" width="186" height="179"><BR>
+    <span class="Estilo2"><B>Atencao!</B><BR>
+    O  <%=campo_msg%> <i>"<%=valor_msg%>"</i> nao pode ser salvo, pois ja esta cadastrado ..
+    <BR>
+    <A href="javascript:history.go(-1)">Clique aqui</a> para voltar ao cadastro</A></span></span><BR>
+    <BR>
+
+<%
+  End If
+
+  objCon.Close
+  Set objCon = Nothing
+Else
+  Set objCon = Server.CreateObject("ADODB.Connection")
+  objCon.Open strCon
+
+  Set objRS= Server.CreateObject("ADODB.Recordset")
+  objRS.CursorLocation = 2
+  objRS.CursorType = 0
+  objRS.LockType = 3
+  strQ = "SELECT * FROM inc_alunos Where 1 <> 1"
+  objRS.Open strQ, objCon, , , &H0001
+%>
+
+<form name="form_incluir" method="post" action="<%=Request.ServerVariables("SCRIPT_NAME")%>" accept-charset="ISO-8859-1" id="Form1" onSubmit="return Validateform_incluir(this);">
+<img src="imagens/logo1.png"class="aligncenter" width="122" height="149" >
+<h2 class="aligncenter">CADASTRO ATLETAS</h2>
+      <p class="aligncenter">Sistema de inscrição de eventos<br>
+      <a href="http://www.sistemainc.com.br/cearacolegial/sistema/welcome.asp">Voltar </a></p>
+   
+      <table width="89%"  >
+        <td height="5%" scope="row"><strong>Nome:</strong></td>
+        <th width="33%" scope="col">
+        <%If objRS.Fields("nome").properties("IsAutoIncrement") = False Then%>
+<INPUT name="nome" type="text" class="t1 required-entry firstname" id="billing:firstname" value="" size="50" maxlength="255" onKeyUp="maiuscula('.firstname')" required >
+<%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%>
+          </th>
+        <th colspan="3" rowspan="25" scope="col">&nbsp;</th>
+        <td width="36%" rowspan="25" align="center" scope="col"><div align="center"><img src="imagens/anonimo12.jpg" name="img_foto" width="157" height="161"  border="0">
+          </p>
+          <INPUT type="hidden" name="foto" value="imagens/noimage.gif" df_verificar="sim">
+          <DIV id="Layer1" style="width: 1px; height:1px; visibility: visible; border:1px solid black"></DIV>
+          </DIV>      <p align="center">&#8250;&nbsp;<a href="df_upload_imagens.asp?campo=<%=Server.URLEncode("foto")%>&pasta=<%=Server.URLEncode("imagens_foto")%>" onClick="abre_janela(250, 300, 'alterar_imagem')" target="alterar_imagem" class="texto_pagina">Enviar Imagem</a></p>
+          <%If objRS.Fields("escola").properties("IsAutoIncrement") = False Then%>
+          <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%>
+          <input name="escola" type="hidden" id="escola" value="<%Response.Write(Session("nome_fantasia"))%>">
+          <%If objRS.Fields("id_escola").properties("IsAutoIncrement") = False Then%>
+          <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%>
+          <input name="id_escola" type="hidden" id="id_escola" value="<%Response.Write(Session("registro"))%>">      
+          <input type="hidden" name="cnpj_escola"value="<%Response.Write(Session("admin"))%>"></td>
+      </tr>
+  <tr>
+    <td height="5%" scope="row"><strong>Sexo</strong></td>
+    <td><label>
+      <%If objRS.Fields("sexo").properties("IsAutoIncrement") = False Then%>
+<select name="select">
+        <option value="Masculino">Masculino</option>
+        <option value="Feminino">Feminino</option>
+        </select>
+    <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%>
+    </label></td>
+  </tr>
+  <tr>
+    <td height="5%" scope="row"><strong>Natural:</strong></td>
+    <td><%If objRS.Fields("natural").properties("IsAutoIncrement") = False Then%>
+      <INPUT name="natural" type="text" class="t1 required-entry firstname" id="nome" value="" size="50" maxlength="255" onKeyUp="maiuscula('.firstname')" required>
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%></td>
+  </tr>
+  <tr>
+    <td height="5%" scope="row"><div align="left"><strong>Data nascimento:* </strong></div></td>
+    <td><div align="left">
+        <%If objRS.Fields("data_nascimento").properties("IsAutoIncrement") = False Then%>
+        <INPUT style="width=350" type="text" name="data_nascimento" id="data_nascimento" maxlength="255" value="" onKeyPress="desabilita_cor(this)"  df_verificar="sim" class = "campos_formulario" required>
+        <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%>
+    </div></td>
+    </tr>
+  <tr>
+    <td height="30" scope="row"><div align="left"><strong>Cep:*</strong></div></td>
+    <td><div align="left">
+      <%If objRS.Fields("cep").properties("IsAutoIncrement") = False Then%>
+      <INPUT style="width=350" type="text" name="cep" id="cep" maxlength="255" value=""  class="inputs" onBlur="getEndereco()"required >
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%>
+    </div></td>
+    </tr>
+  <tr>
+    <td height="5%" scope="row"><div align="left"><strong>Endere&ccedil;o:</strong></div></td>
+    <td><div align="left">
+      <%If objRS.Fields("endereco").properties("IsAutoIncrement") = False Then%>
+      <INPUT name="endereco" id="endereco" type="text" class=campos_formulario style="width=350" onKeyPress="desabilita_cor(this)" value="" size="50" maxlength="255"  df_verificar="sim" required >
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%>
+    </div></td>
+    </tr>
+  <tr>
+    <td height="4%" scope="row"><strong>N&ordm;:</strong></td>
+    <td><%If objRS.Fields("numero").properties("IsAutoIncrement") = False Then%>
+      <INPUT name="numero" type="text" class=campos_formulario style="width=350" onKeyPress="desabilita_cor(this)" value="" size="5"  df_verificar="sim"required >
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%></td>
+    </tr>
+  <tr>
+    <td height="4%" scope="row"><strong>Bairro:</strong></td>
+    <td><%If objRS.Fields("bairro").properties("IsAutoIncrement") = False Then%>
+      <INPUT name="bairro" type="text" id="bairro" class=campos_formulario style="width=350" onKeyPress="desabilita_cor(this)" value="" size="40" maxlength="255"  df_verificar="sim" required >
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%></td>
+    </tr>
+  <tr>
+    <td height="5%" scope="row"><div align="left"><strong>Cidade:</strong></div></td>
+    <td><div align="left">
+        <%If objRS.Fields("cidade").properties("IsAutoIncrement") = False Then%>
+        <INPUT style="width=350" type="text" id="cidade" name="cidade" maxlength="255" value="" onKeyPress="desabilita_cor(this)"  df_verificar="sim" class="campos_formulario" required >
+        <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%>
+    </div></td>
+    </tr>
+  <tr>
+    <td height="5%" scope="row"><strong>CPF:</strong></td>
+    <td><%If objRS.Fields("cpf").properties("IsAutoIncrement") = False Then%>
+        <INPUT name="cpf" type="text" class=campos_formulario id="cpf"  onKeyPress="desabilita_cor(this)" onBlur="checa_cpf()" value="" maxlength="14" df_validar="cpf" required >
+        <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%></td>
+    </tr>
+  <tr>
+    <td height="5%" scope="row"><strong>RG:</strong></td>
+    <td><%If objRS.Fields("rg").properties("IsAutoIncrement") = False Then%>
+      <INPUT style="width=350" type="text" name="rg" maxlength="255" value="" onKeyPress="desabilita_cor(this)"  df_verificar="sim"  required >
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%></td>
+    </tr>
+  <tr>
+    <td height="5%" scope="row"><strong>Passaport:</strong></td>
+    <td><%If objRS.Fields("passaport").properties("IsAutoIncrement") = False Then%>
+        <INPUT style="width=350" type="text" name="passaport" maxlength="255" value="" onKeyPress="desabilita_cor(this)"  df_verificar="sim" >
+        <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%></td>
+    </tr>
+  <tr>
+    <td height="5%" scope="row"><strong>Responsável * </strong></td>
+    <td><%If objRS.Fields("responsavel").properties("IsAutoIncrement") = False Then%>
+      <INPUT name="responsavel" type="text" class="t1 required-entry firstname" id="responsavel" value="" size="50" maxlength="255" onKeyUp="maiuscula('.firstname')" required >
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%></td>
+    </tr>
+  <tr>
+    <td height="5%" scope="row"><strong>Parentesco: * </strong></td>
+    <td><%If objRS.Fields("parentesco").properties("IsAutoIncrement") = False Then%>
+      <INPUT name="parentesco" type="text" class="t1 required-entry firstname" id="parentesco" value="" size="50" maxlength="255" onKeyUp="maiuscula('.firstname')" required >
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%></td>
+    </tr>
+  <tr>
+    <td height="5%" scope="row"><strong>Matricula Escola * </strong></td>
+    <td><%If objRS.Fields("matricula_escola").properties("IsAutoIncrement") = False Then%>
+      <INPUT name="matricula_escola" type="text"  id="matricula_escola" value="" size="50" maxlength="255"  required >
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%></td>
+    </tr>
+  <tr>
+    <td height="5%" scope="row"><strong>Telefone:*</strong></td>
+    <td height="5%" scope="row"><%If objRS.Fields("telefone").properties("IsAutoIncrement") = False Then%>
+      <INPUT name="telefone" type="text" class=campos_formulario id="telefone"  style="width=350" onKeyPress="desabilita_cor(this)" value="" size="50" maxlength="255"  df_verificar="sim" required >
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%></td>
+    </tr>
+  <tr>
+    <td height="5%" colspan="2" scope="row"><div align="center"><strong>Modalidades</strong></div></td>
+    </tr>
+  <tr>
+    <td height="5%" scope="row"><strong>Modalidade 01 </strong></td>
+    <td><strong>
+      <%If objRS.Fields("sexo").properties("IsAutoIncrement") = False Then%>
+      <select name="modalidade1" id="modalidade1">
+       <option value="Nao Tem">Nâo Tem</option>
+       	        <option value="ATLETISMO">ATLETISMO</option>
+		        <option value="JUD&Ocirc;">JUD&Ocirc;</option>
+		        <option value="NATA&Ccedil;&Atilde;O">NATA&Ccedil;&Atilde;O</option>
+		        <option value="XADREZ">XADREZ</option>
+		        <option value="VOLEIBOL">VOLEIBOL</option>
+		        <option value="HANDEBOL">HANDEBOL</option>
+		        <option value="FUTSAL">FUTSAL</option>
+                <option value="FUTEBOL DE SALAO">FUTEBOL DE SALAO</option>
+		        <option value="BASQUETE">BASQUETE</option>
+		        <option value="DAMA">DAMA</option>
+		        <option value="HAND BEACH">HAND BEACH</option>
+		        <option value="VOLEI DE PRAIA">VOLEI DE PRAIA</option>
+		        <option value="TAEKWONDO">TAEKWONDO</option>
+		        <option value="TENIS DE MESA">TENIS DE MESA</option>
+		        <option value="CICLISMO">CICLISMO</option>
+		        <option value="BADMINTON">BADMINTON</option>
+		        <option value="KARATE">KARATE</option>
+        </select>
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%>
+    </strong></td>
+    </tr>
+  <tr>
+    <td height="5%" scope="row"><strong>Modalidade 02</strong></td>
+    <td><strong>
+      <%If objRS.Fields("sexo").properties("IsAutoIncrement") = False Then%>
+      <select name="modalidade2" id="select">
+       <option value="Nao Tem">Nâo Tem</option>
+         <option value="ATLETISMO">ATLETISMO</option>
+		        <option value="JUD&Ocirc;">JUD&Ocirc;</option>
+		        <option value="NATA&Ccedil;&Atilde;O">NATA&Ccedil;&Atilde;O</option>
+		        <option value="XADREZ">XADREZ</option>
+		        <option value="VOLEIBOL">VOLEIBOL</option>
+		        <option value="HANDEBOL">HANDEBOL</option>
+		        <option value="FUTSAL">FUTSAL</option>
+                <option value="FUTEBOL DE SALAO">FUTEBOL DE SALAO</option>
+		        <option value="BASQUETE">BASQUETE</option>
+		        <option value="DAMA">DAMA</option>
+		        <option value="HAND BEACH">HAND BEACH</option>
+		        <option value="VOLEI DE PRAIA">VOLEI DE PRAIA</option>
+		        <option value="TAEKWONDO">TAEKWONDO</option>
+		        <option value="TENIS DE MESA">TENIS DE MESA</option>
+		        <option value="CICLISMO">CICLISMO</option>
+		        <option value="BADMINTON">BADMINTON</option>
+		        <option value="KARATE">KARATE</option>
+        </select>
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%>
+    </strong></td>
+    </tr>
+  <tr>
+    <td height="5%" scope="row"><strong>Modalidade 03</strong></td>
+    <td><strong>
+      <%If objRS.Fields("sexo").properties("IsAutoIncrement") = False Then%>
+      <select name="modalidade3" id="modalidade3">
+       <option value="Nao Tem">Nâo Tem</option>
+         <option value="ATLETISMO">ATLETISMO</option>
+		        <option value="JUD&Ocirc;">JUD&Ocirc;</option>
+		        <option value="NATA&Ccedil;&Atilde;O">NATA&Ccedil;&Atilde;O</option>
+		        <option value="XADREZ">XADREZ</option>
+		        <option value="VOLEIBOL">VOLEIBOL</option>
+		        <option value="HANDEBOL">HANDEBOL</option>
+		        <option value="FUTSAL">FUTSAL</option>
+                <option value="FUTEBOL DE SALAO">FUTEBOL DE SALAO</option>
+		        <option value="BASQUETE">BASQUETE</option>
+		        <option value="DAMA">DAMA</option>
+		        <option value="HAND BEACH">HAND BEACH</option>
+		        <option value="VOLEI DE PRAIA">VOLEI DE PRAIA</option>
+		        <option value="TAEKWONDO">TAEKWONDO</option>
+		        <option value="TENIS DE MESA">TENIS DE MESA</option>
+		        <option value="CICLISMO">CICLISMO</option>
+		        <option value="BADMINTON">BADMINTON</option>
+		        <option value="KARATE">KARATE</option>
+        </select>
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%>
+    </strong></td>
+    </tr>
+  <tr>
+    <td height="5%" scope="row"><strong>Modalidade 04</strong></td>
+    <td><strong>
+      <%If objRS.Fields("sexo").properties("IsAutoIncrement") = False Then%>
+      <select name="modalidade4" id="modalidade4">
+       <option value="Nao Tem">Nâo Tem</option>
+         <option value="ATLETISMO">ATLETISMO</option>
+		        <option value="JUD&Ocirc;">JUD&Ocirc;</option>
+		        <option value="NATA&Ccedil;&Atilde;O">NATA&Ccedil;&Atilde;O</option>
+		        <option value="XADREZ">XADREZ</option>
+		        <option value="VOLEIBOL">VOLEIBOL</option>
+		        <option value="HANDEBOL">HANDEBOL</option>
+		        <option value="FUTSAL">FUTSAL</option>
+                <option value="FUTEBOL DE SALAO">FUTEBOL DE SALAO</option>
+		        <option value="BASQUETE">BASQUETE</option>
+		        <option value="DAMA">DAMA</option>
+		        <option value="HAND BEACH">HAND BEACH</option>
+		        <option value="VOLEI DE PRAIA">VOLEI DE PRAIA</option>
+		        <option value="TAEKWONDO">TAEKWONDO</option>
+		        <option value="TENIS DE MESA">TENIS DE MESA</option>
+		        <option value="CICLISMO">CICLISMO</option>
+		        <option value="BADMINTON">BADMINTON</option>
+		        <option value="KARATE">KARATE</option>
+        </select>
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%>
+    </strong></td>
+    </tr>
+  <tr>
+    <td height="5%" scope="row"><strong>Modalidade 05 </strong></td>
+    <td><strong>
+      <%If objRS.Fields("sexo").properties("IsAutoIncrement") = False Then%>
+      <select name="modalidade5" id="modalidade5">
+        <option value="Nao Tem">Nâo Tem</option>
+         <option value="ATLETISMO">ATLETISMO</option>
+		        <option value="JUD&Ocirc;">JUD&Ocirc;</option>
+		        <option value="NATA&Ccedil;&Atilde;O">NATA&Ccedil;&Atilde;O</option>
+		        <option value="XADREZ">XADREZ</option>
+		        <option value="VOLEIBOL">VOLEIBOL</option>
+		        <option value="HANDEBOL">HANDEBOL</option>
+		        <option value="FUTSAL">FUTSAL</option>
+                <option value="FUTEBOL DE SALAO">FUTEBOL DE SALAO</option>
+		        <option value="BASQUETE">BASQUETE</option>
+		        <option value="DAMA">DAMA</option>
+		        <option value="HAND BEACH">HAND BEACH</option>
+		        <option value="VOLEI DE PRAIA">VOLEI DE PRAIA</option>
+		        <option value="TAEKWONDO">TAEKWONDO</option>
+		        <option value="TENIS DE MESA">TENIS DE MESA</option>
+		        <option value="CICLISMO">CICLISMO</option>
+		        <option value="BADMINTON">BADMINTON</option>
+		        <option value="KARATE">KARATE</option>
+        </select>
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%>
+    </strong></td>
+    </tr>
+  <tr>
+    <td height="5%" scope="row"><strong>Categoria01</strong></td>
+    <td><strong>
+      <%If objRS.Fields("categoria1").properties("IsAutoIncrement") = False Then%>
+      <select name="categoria1" id="categoria1">
+        <option value="Sub09">Sub09</option>
+        <option value="Sub11">Sub11</option>
+        <option value="Sub13">Sub13</option>
+        <option value="Sub14-HANDEBOL">Sub14-HANDEBOL</option>
+        <option value="Sub15">Sub15</option>
+        <option value="Sub17">Sub17</option>
+        <option value="Sub18">Sub18</option>
+        
+      </select>
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%>
+    </strong></td>
+  </tr>
+  <tr>
+    <td height="5%" scope="row"><strong>Categoria02</strong></td>
+    <td><strong>
+      <%If objRS.Fields("categoria2").properties("IsAutoIncrement") = False Then%>
+      <select name="categoria2" id="categoria2">
+      <option value="Nao Tem">Nâo Tem</option>
+        <option value="Sub09">Sub09</option>
+        <option value="Sub11">Sub11</option>
+        <option value="Sub13">Sub13</option>
+        <option value="Sub14-HANDEBOL">Sub14-HANDEBOL</option>
+        <option value="Sub15">Sub15</option>
+        <option value="Sub17">Sub17</option>
+        <option value="Sub18">Sub18</option>
+        <
+      </select>
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%>
+    </strong></td>
+  </tr>
+  <tr>
+    <td height="5%" scope="row"><strong>Categoria03</strong></td>
+    <td><strong>
+      <%If objRS.Fields("categoria3").properties("IsAutoIncrement") = False Then%>
+      <select name="categoria3" id="categoria3">
+      <option value="Nao Tem">Nâo Tem</option>
+        <option value="Sub09">Sub09</option>
+        <option value="Sub11">Sub11</option>
+        <option value="Sub13">Sub13</option>
+        <option value="Sub14-HANDEBOL">Sub14-HANDEBOL</option>
+        <option value="Sub15">Sub15</option>
+        <option value="Sub17">Sub17</option>
+        <option value="Sub18">Sub18</option>
+        
+        </select>
+      <%
+Else
+  Response.Write "<B>(Autom&aacute;tico)</B>"
+End If
+%>
+    </strong></td>
+    <%If objRS.Fields("cnpj_escola").properties("IsAutoIncrement") = False Then%>
+    </tr>
+</table>
+<p align="right">
+  <input type="submit" name="submit" value="Enviar" class=botao_enviar>
+</p>
+</form>
+
+<%
+  objCon.Close
+  Set objCon = Nothing
+End If
+end if
+%>
+</div>
+    </div>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
+ </fieldset>
+</section>
+</body>
+</html>
+
+
